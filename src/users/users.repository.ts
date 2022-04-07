@@ -8,8 +8,9 @@ import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 
 import { User } from './user.entity';
-import { CreateUserDto } from './dtos/create-user.dto';
+import { CreateUserDto } from './dto/create-user.dto';
 import { UserRole } from './user-roles.enum';
+import { CredentialsDto } from 'src/auth/dto/credentials.dto';
 
 @EntityRepository(User)
 export class UserRepository extends Repository<User> {
@@ -39,6 +40,14 @@ export class UserRepository extends Repository<User> {
         throw new ConflictException('Email is already in use.');
       else throw new InternalServerErrorException('Error saving data.');
     }
+  }
+
+  async checkCredentials(credentiaslsDto: CredentialsDto): Promise<User> {
+    const { email, password } = credentiaslsDto;
+    const user = await this.findOne({ email, status: true });
+
+    if (user && (await user.checkPassword(password))) return user;
+    return null;
   }
 
   private async hashPassword(password: string, salt: string): Promise<string> {
